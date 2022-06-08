@@ -275,6 +275,10 @@ namespace Coffee.UIExtensions
         {
             Profiler.BeginSample("[UIParticleRenderer] GetWorldScale");
             var scale = _parent.scale3D;
+            if (_parent.uiScaling)
+            {
+                scale.Scale(_parent.transform.localScale.Inverse());
+            }
             //else if (_parent.scalingMode == UIParticle.ScalingMode.UI && _particleSystem.main.scalingMode != ParticleSystemScalingMode.Hierarchy)
             //{
             //    var gscale = _parent.transform.lossyScale.GetScaled(canvas.transform.lossyScale.Inverse());

@@ -36,6 +36,10 @@ namespace Coffee.UIExtensions
 
         private List<UIParticleRenderer> m_Renderers = new List<UIParticleRenderer>();
 
+        [Tooltip("UI-adapted scaling.")]
+        [SerializeField]
+        private bool m_UIScaling = true;
+
 #if !SERIALIZE_FIELD_MASKABLE
         [SerializeField] private bool m_Maskable = true;
 #endif
@@ -68,6 +72,15 @@ namespace Coffee.UIExtensions
         {
             get { return m_Scale3D; }
             set { m_Scale3D = value; }
+        }
+
+        /// <summary>
+        /// UI-adapted scaling.
+        /// </summary>
+        public bool uiScaling
+        {
+            get { return m_UIScaling; }
+            set { m_UIScaling = value; }
         }
 
         public List<ParticleSystem> particles
@@ -212,6 +225,10 @@ namespace Coffee.UIExtensions
         public void UpdateRenderers()
         {
             var newScale = Vector3.one;
+            if (uiScaling)
+            {
+                newScale = transform.parent.lossyScale.Inverse();
+            }
             if (transform.localScale != newScale)
             {
                 transform.localScale = newScale;

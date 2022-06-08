@@ -26,6 +26,7 @@ namespace Coffee.UIExtensions
         private SerializedProperty m_Maskable;
         private SerializedProperty m_Scale3D;
         private SerializedProperty m_AnimatableProperties;
+        private SerializedProperty m_UIScaling;
 
         private ReorderableList _ro;
         static private bool _xyzMode;
@@ -54,6 +55,7 @@ namespace Coffee.UIExtensions
             m_Maskable = serializedObject.FindProperty("m_Maskable");
             m_Scale3D = serializedObject.FindProperty("m_Scale3D");
             m_AnimatableProperties = serializedObject.FindProperty("m_AnimatableProperties");
+            m_UIScaling = serializedObject.FindProperty("m_UIScaling");
 
             var sp = serializedObject.FindProperty("m_Particles");
             _ro = new ReorderableList(sp.serializedObject, sp, true, true, true, true);
@@ -135,6 +137,9 @@ namespace Coffee.UIExtensions
 
             // Scale
             _xyzMode = DrawFloatOrVector3Field(m_Scale3D, _xyzMode);
+
+            // UIScaling
+            EditorGUILayout.PropertyField(m_UIScaling);
 
             // AnimatableProperties
             var mats = current.particles
