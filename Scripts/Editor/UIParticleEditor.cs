@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditorInternal;
 using UnityEngine.UI;
+using System;
+using System.Reflection;
 
 namespace Coffee.UIExtensions
 {
@@ -22,6 +24,7 @@ namespace Coffee.UIExtensions
         private static readonly GUIContent s_ContentTrailMaterial = new GUIContent("Trail Material");
         private static readonly GUIContent s_Content3D = new GUIContent("3D");
         private static readonly GUIContent s_ContentScale = new GUIContent("Scale");
+        private static SerializedObject s_SerializedObject;
 
         private SerializedProperty m_Maskable;
         private SerializedProperty m_Scale3D;
@@ -41,6 +44,51 @@ namespace Coffee.UIExtensions
             "_ColorMask",
         };
 
+
+        [InitializeOnLoadMethod]
+        static void Init()
+        {
+            // static void Window(GUIContent title, WindowFunction sceneViewFunc, int order, UnityEngine.Object target, WindowDisplayOption option)
+            var miSceneViewOverlayWindow = Type.GetType("UnityEditor.SceneViewOverlay, UnityEditor")
+                .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                .First(x => x.Name == "Window" && x.GetParameters().Length == 5);
+            var windowFunction = (Action<UnityEngine.Object, SceneView>)WindowFunction;
+            var windowFunctionType = Type.GetType("UnityEditor.SceneViewOverlay+WindowFunction, UnityEditor");
+            var windowFunctionDelegate = Delegate.CreateDelegate(windowFunctionType, windowFunction.Method);
+            var windowTitle = new GUIContent(ObjectNames.NicifyVariableName(typeof(UIParticle).Name));
+            var sceneViewArgs = new object[] { windowTitle, windowFunctionDelegate, 599, null, 2 };
+#if UNITY_2019_1_OR_NEWER
+            SceneView.duringSceneGui += _ => miSceneViewOverlayWindow.Invoke(null, sceneViewArgs);
+#else
+            SceneView.onSceneGUIDelegate += _ =>
+#endif
+            {
+                if (s_SerializedObject != null)
+                {
+                    miSceneViewOverlayWindow.Invoke(null, sceneViewArgs);
+                }
+            };
+
+            Func<SerializedObject> createSerializeObject = () =>
+            {
+                var uiParticles = Selection.gameObjects
+                        .Select(x => x.GetComponent<ParticleSystem>())
+                        .Where(x => x)
+                        .Select(x => x.GetComponentInParent<UIParticle>())
+                        .Where(x => x)
+                        .Concat(
+                            Selection.gameObjects
+                                .Select(x => x.GetComponent<UIParticle>())
+                                .Where(x => x)
+                        )
+                        .Distinct()
+                        .ToArray();
+                return uiParticles.Any() ? new SerializedObject(uiParticles) : null;
+            };
+
+            s_SerializedObject = createSerializeObject();
+            Selection.selectionChanged += () => s_SerializedObject = createSerializeObject();
+        }
 
         //################################
         // Public/Protected Members.
@@ -201,6 +249,22 @@ namespace Coffee.UIExtensions
                     sp.boolValue = false;
                     so.ApplyModifiedProperties();
                 }
+            }
+        }
+
+        private static void WindowFunction(UnityEngine.Object target, SceneView sceneView)
+        {
+            try
+            {
+                s_SerializedObject.Update();
+
+                _xyzMode = DrawFloatOrVector3Field(s_SerializedObject.FindProperty("m_Scale3D"), _xyzMode);
+                EditorGUILayout.PropertyField(s_SerializedObject.FindProperty("m_UIScaling"));
+
+                s_SerializedObject.ApplyModifiedProperties();
+            }
+            catch
+            {
             }
         }
 
