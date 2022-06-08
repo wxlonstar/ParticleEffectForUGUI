@@ -23,15 +23,13 @@ namespace Coffee.UIExtensions
         private static readonly GUIContent s_Content3D = new GUIContent("3D");
         private static readonly GUIContent s_ContentScale = new GUIContent("Scale");
 
-        private SerializedProperty _spMaskable;
-        private SerializedProperty _spScale;
-        private SerializedProperty _spIgnoreCanvasScaler;
-        private SerializedProperty _spAnimatableProperties;
-        private SerializedProperty _spShrinkByMaterial;
+        private SerializedProperty m_Maskable;
+        private SerializedProperty m_Scale3D;
+        private SerializedProperty m_AnimatableProperties;
 
         private ReorderableList _ro;
-        private bool _xyzMode;
         private bool _showMaterials;
+        static private bool _xyzMode;
 
         private static readonly List<string> s_MaskablePropertyNames = new List<string>
         {
@@ -53,12 +51,10 @@ namespace Coffee.UIExtensions
         protected override void OnEnable()
         {
             base.OnEnable();
-            _spMaskable = serializedObject.FindProperty("m_Maskable");
-            _spScale = serializedObject.FindProperty("m_Scale3D");
-            _spIgnoreCanvasScaler = serializedObject.FindProperty("m_IgnoreCanvasScaler");
-            _spAnimatableProperties = serializedObject.FindProperty("m_AnimatableProperties");
-            _spShrinkByMaterial = serializedObject.FindProperty("m_ShrinkByMaterial");
-            _showMaterials = EditorPrefs.GetBool("Coffee.UIExtensions.UIParticleEditor._showMaterials", true);
+
+            m_Maskable = serializedObject.FindProperty("m_Maskable");
+            m_Scale3D = serializedObject.FindProperty("m_Scale3D");
+            m_AnimatableProperties = serializedObject.FindProperty("m_AnimatableProperties");
 
             var sp = serializedObject.FindProperty("m_Particles");
             _ro = new ReorderableList(sp.serializedObject, sp, true, true, true, true);
@@ -91,7 +87,7 @@ namespace Coffee.UIExtensions
                     materials.serializedObject.ApplyModifiedProperties();
                 }
             };
-            _ro.drawHeaderCallback += rect =>
+            _ro.drawHeaderCallback = rect =>
             {
 #if !UNITY_2019_3_OR_NEWER
                 rect.y -= 1;
@@ -107,6 +103,13 @@ namespace Coffee.UIExtensions
                     {
                         t.RefreshParticles();
                     }
+                }
+            };
+            _ro.onReorderCallback = _ =>
+            {
+                foreach (UIParticle t in targets)
+                {
+                    t.RefreshParticles(t.particles);
                 }
             };
         }
@@ -136,23 +139,10 @@ namespace Coffee.UIExtensions
             serializedObject.Update();
 
             // Maskable
-            EditorGUILayout.PropertyField(_spMaskable);
-
-            // IgnoreCanvasScaler
-            using (var ccs = new EditorGUI.ChangeCheckScope())
-            {
-                EditorGUILayout.PropertyField(_spIgnoreCanvasScaler);
-                if (ccs.changed)
-                {
-                    foreach (UIParticle p in targets)
-                    {
-                        p.ignoreCanvasScaler = _spIgnoreCanvasScaler.boolValue;
-                    }
-                }
-            }
+            EditorGUILayout.PropertyField(m_Maskable);
 
             // Scale
-            _xyzMode = DrawFloatOrVector3Field(_spScale, _xyzMode);
+            _xyzMode = DrawFloatOrVector3Field(m_Scale3D, _xyzMode);
 
             // AnimatableProperties
             var mats = current.particles
@@ -163,15 +153,12 @@ namespace Coffee.UIExtensions
 
             // Animated properties
             EditorGUI.BeginChangeCheck();
-            AnimatedPropertiesEditor.DrawAnimatableProperties(_spAnimatableProperties, mats);
+            AnimatedPropertiesEditor.DrawAnimatableProperties(m_AnimatableProperties, mats);
             if (EditorGUI.EndChangeCheck())
             {
                 foreach (UIParticle t in targets)
                     t.SetMaterialDirty();
             }
-
-            // ShrinkByMaterial
-            EditorGUILayout.PropertyField(_spShrinkByMaterial);
 
             // Target ParticleSystems.
             _ro.DoLayoutList();
@@ -195,12 +182,10 @@ namespace Coffee.UIExtensions
                 }
             }
 
-            // Does the shader support UI masks?
-
+            // UIParticle for trail should be removed.
             if (FixButton(current.m_IsTrail, "This UIParticle component should be removed. The UIParticle for trails is no longer needed."))
             {
                 DestroyUIParticle(current);
-                return;
             }
 
             // #203: When using linear color space, the particle colors are not output correctly.
@@ -222,7 +207,7 @@ namespace Coffee.UIExtensions
             }
         }
 
-        void DestroyUIParticle(UIParticle p, bool ignoreCurrent = false)
+        private void DestroyUIParticle(UIParticle p, bool ignoreCurrent = false)
         {
             if (!p || ignoreCurrent && target == p) return;
 
@@ -248,7 +233,7 @@ namespace Coffee.UIExtensions
 #endif
         }
 
-        bool FixButton(bool show, string text)
+        private static bool FixButton(bool show, string text)
         {
             if (!show) return false;
             using (new EditorGUILayout.HorizontalScope(GUILayout.ExpandWidth(true)))
@@ -275,14 +260,7 @@ namespace Coffee.UIExtensions
             EditorGUILayout.BeginHorizontal();
             if (showXyz)
             {
-                EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(sp);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    x.floatValue = Mathf.Max(0.001f, x.floatValue);
-                    y.floatValue = Mathf.Max(0.001f, y.floatValue);
-                    z.floatValue = Mathf.Max(0.001f, z.floatValue);
-                }
             }
             else
             {
@@ -290,9 +268,7 @@ namespace Coffee.UIExtensions
                 EditorGUILayout.PropertyField(x, s_ContentScale);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    x.floatValue = Mathf.Max(0.001f, x.floatValue);
-                    y.floatValue = Mathf.Max(0.001f, x.floatValue);
-                    z.floatValue = Mathf.Max(0.001f, x.floatValue);
+                    y.floatValue = z.floatValue = x.floatValue;
                 }
             }
 
