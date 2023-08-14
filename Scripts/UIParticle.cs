@@ -451,9 +451,12 @@ namespace Coffee.UIExtensions
         {
             if (!canvas) return Camera.main;
 
-            // World camera.
+            // Render mode is not ScreenSpaceOverlay, use world camera.
             var root = canvas.rootCanvas;
-            if (root.renderMode != RenderMode.ScreenSpaceOverlay) return root.worldCamera ? root.worldCamera : Camera.main;
+            if (root.renderMode != RenderMode.ScreenSpaceOverlay)
+            {
+                return root.worldCamera ? root.worldCamera : Camera.main;
+            }
 
             // Create ortho-camera.
             if (!_orthoCamera)
