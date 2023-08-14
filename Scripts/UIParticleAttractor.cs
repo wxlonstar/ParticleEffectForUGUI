@@ -36,6 +36,12 @@ namespace Coffee.UIExtensions
         [SerializeField]
         private UnityEvent m_OnAttracted;
 
+        public float destinationRadius
+        {
+            get { return m_DestinationRadius; }
+            set { m_DestinationRadius = Mathf.Clamp(value, 0.1f, 10f); }
+        }
+
         public float delay
         {
             get
@@ -70,6 +76,12 @@ namespace Coffee.UIExtensions
             {
                 m_Movement = value;
             }
+        }
+
+        public UnityEvent onAttracted
+        {
+            get { return m_OnAttracted; }
+            set { m_OnAttracted = value; }
         }
 
         public ParticleSystem particleSystem
