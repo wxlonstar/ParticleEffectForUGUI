@@ -57,7 +57,7 @@ namespace Coffee.UIExtensions
 
         [SerializeField]
         [Tooltip("The particles will be emitted at the ParticleSystem position.\nMove the UIParticle/ParticleSystem to move the particle.")]
-        private bool m_AbsoluteMode = false;
+        private bool m_AbsoluteMode = true;
 
         private List<UIParticleRenderer> m_Renderers = new List<UIParticleRenderer>();
 
