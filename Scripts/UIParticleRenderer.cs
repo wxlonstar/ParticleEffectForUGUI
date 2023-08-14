@@ -276,6 +276,18 @@ namespace Coffee.UIExtensions
             {
                 s_CombineInstances[0].mesh.Clear(false);
             }
+
+            // Too many vertices to render.
+            if (65535 <= s_CombineInstances[0].mesh.vertexCount)
+            {
+                s_CombineInstances[0].mesh.Clear(false);
+                UnityEngine.Debug.LogErrorFormat(this,
+                    "Too many vertices to render. index={0}, isTrail={1}, vertexCount={2}(>=65535)",
+                    _index,
+                    _isTrail,
+                    s_CombineInstances[0].mesh.vertexCount
+                );
+            }
             Profiler.EndSample();
 
             // Combine mesh to transform. ([ParticleSystem local ->] world -> renderer local)
