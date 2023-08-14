@@ -519,7 +519,9 @@ namespace Coffee.UIExtensions
                 _prewarm = false;
             }
 
-            // Emitted particles found. 
+            // (COMMENT OUT) #231: Sub Emitters option is not work in editor playing
+            /*
+            // Emitted particles found.
             if (_prevParticleCount != _particleSystem.particleCount)
             {
                 var size = _particleSystem.particleCount;
@@ -534,6 +536,7 @@ namespace Coffee.UIExtensions
 
                 _particleSystem.SetParticles(particles, size);
             }
+            */
 
             // get world position.
             var psTransform = _particleSystem.transform;
